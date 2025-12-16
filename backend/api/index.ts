@@ -1,31 +1,26 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from '../src/app.module';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import serverlessExpress from '@vendia/serverless-express';
+import express from 'express';
 
-@Injectable()
-export class LoggingInterceptor implements NestInterceptor {
-  private readonly logger = new Logger(LoggingInterceptor.name);
+let server: any;
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> { // Add <any>
-    const request = context.switchToHttp().getRequest();
-    const method = request.method;
-    const url = request.url;
-    const now = Date.now();
+async function bootstrap() {
+  const app = express();
 
-    return next.handle().pipe(
-      tap(() => {
-        const response = context.switchToHttp().getResponse();
-        const delay = Date.now() - now;
-        this.logger.log(
-          `${method} ${url} ${response.statusCode} - ${delay}ms`,
-        );
-      }),
-    );
+  const nestApp = await NestFactory.create(
+    AppModule,
+    new ExpressAdapter(app),
+  );
+
+  await nestApp.init();
+  return serverlessExpress({ app });
+}
+
+export default async function handler(req: any, res: any) {
+  if (!server) {
+    server = await bootstrap();
   }
+  return server(req, res);
 }
