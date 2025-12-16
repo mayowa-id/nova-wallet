@@ -1,0 +1,110 @@
+{
+  "info": {
+    "name": "Wallet Service API",
+    "description": "API endpoints for the Wallet Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Wallet",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"currency\": \"USD\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/wallets",
+          "host": ["{{base_url}}"],
+          "path": ["wallets"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Fund Wallet",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 100.50,\n  \"idempotencyKey\": \"fund-123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/wallets/{{wallet_id}}/fund",
+          "host": ["{{base_url}}"],
+          "path": ["wallets", "{{wallet_id}}", "fund"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Transfer Between Wallets",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourceWalletId\": \"{{source_wallet_id}}\",\n  \"destinationWalletId\": \"{{destination_wallet_id}}\",\n  \"amount\": 50.00,\n  \"idempotencyKey\": \"transfer-456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/wallets/transfer",
+          "host": ["{{base_url}}"],
+          "path": ["wallets", "transfer"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Wallet Details",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/wallets/{{wallet_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["wallets", "{{wallet_id}}"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "wallet_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "source_wallet_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "destination_wallet_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
