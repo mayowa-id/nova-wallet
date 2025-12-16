@@ -13,9 +13,8 @@ export class Transaction {
   status: TransactionStatus;
   idempotencyKey?: string;
   createdAt: Date;
-  metadata?: Record;
 
-  constructor(partial: Partial) {
+  constructor(partial: Partial<Transaction>) { // Add <Transaction>
     Object.assign(this, partial);
   }
 }

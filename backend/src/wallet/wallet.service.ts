@@ -2,101 +2,72 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ConflictException,
 } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
 import { WalletRepository } from './wallet.repository';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { FundWalletDto } from './dto/fund-wallet.dto';
 import { TransferDto } from './dto/transfer.dto';
 import { WalletResponseDto } from './dto/wallet-response.dto';
 import { Wallet } from './entities/wallet.entity';
-import { Transaction } from './entities/transaction.entity';
 import { TransactionType } from './enums/transaction-type.enum';
 import { TransactionStatus } from './enums/transaction-status.enum';
-import { InMemoryStorage } from '../storage/in-memory.storage';
 
 @Injectable()
 export class WalletService {
-  constructor(
-    private readonly walletRepository: WalletRepository,
-    private readonly storage: InMemoryStorage,
-  ) {}
+  constructor(private readonly walletRepository: WalletRepository) {}
 
-  async createWallet(createWalletDto: CreateWalletDto): Promise {
-    const wallet = new Wallet({
-      id: uuidv4(),
+  async createWallet(createWalletDto: CreateWalletDto): Promise <Wallet> {
+    const wallet = await this.walletRepository.createWallet({
       currency: createWalletDto.currency || 'USD',
       balance: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
-
-    return this.walletRepository.save(wallet);
+    return wallet;
   }
 
   async fundWallet(
     walletId: string,
     fundWalletDto: FundWalletDto,
-  ): Promise {
+  ): Promise<WalletResponseDto> {
     // Check idempotency
     if (fundWalletDto.idempotencyKey) {
-      const existingResponse = this.storage.getIdempotentResponse(
+      const existingTx = await this.walletRepository.findTransactionByIdempotencyKey(
         fundWalletDto.idempotencyKey,
       );
-      if (existingResponse) {
-        return existingResponse;
+      if (existingTx) {
+        const wallet = await this.walletRepository.findById(walletId);
+        return new WalletResponseDto(wallet!, [existingTx]);
       }
     }
 
-    // Acquire lock
-    const releaseLock = await this.walletRepository.acquireLock(walletId);
-
-    try {
+    return this.walletRepository.executeInTransaction(async () => {
       const wallet = await this.walletRepository.findById(walletId);
       if (!wallet) {
         throw new NotFoundException(`Wallet with ID ${walletId} not found`);
       }
 
       const balanceBefore = wallet.balance;
-      wallet.balance = this.roundToTwoDecimals(
-        wallet.balance + fundWalletDto.amount,
-      );
-      wallet.updatedAt = new Date();
+      const newBalance = this.roundToTwoDecimals(wallet.balance + fundWalletDto.amount);
 
-      await this.walletRepository.save(wallet);
+      const updatedWallet = await this.walletRepository.updateBalance(walletId, newBalance);
 
-      const transaction = new Transaction({
-        id: uuidv4(),
+      const transaction = await this.walletRepository.createTransaction({
         walletId: wallet.id,
         type: TransactionType.FUND,
         amount: fundWalletDto.amount,
         balanceBefore,
-        balanceAfter: wallet.balance,
+        balanceAfter: newBalance,
         status: TransactionStatus.SUCCESS,
         idempotencyKey: fundWalletDto.idempotencyKey,
-        createdAt: new Date(),
       });
 
-      await this.walletRepository.saveTransaction(transaction);
-
-      const response = new WalletResponseDto(wallet, [transaction]);
-
-      // Store idempotent response
-      if (fundWalletDto.idempotencyKey) {
-        this.storage.setIdempotentResponse(
-          fundWalletDto.idempotencyKey,
-          response,
-        );
-      }
-
-      return response;
-    } finally {
-      releaseLock();
-    }
+      return new WalletResponseDto(updatedWallet, [transaction]);
+    });
   }
 
-  async transfer(transferDto: TransferDto): Promise {
+  async transfer(transferDto: TransferDto):Promise<{
+    sourceWallet: Wallet;
+    destinationWallet: Wallet;
+    transactions: any[];}> {
     // Validate same wallet transfer
     if (transferDto.sourceWalletId === transferDto.destinationWalletId) {
       throw new BadRequestException('Cannot transfer to the same wallet');
@@ -104,26 +75,25 @@ export class WalletService {
 
     // Check idempotency
     if (transferDto.idempotencyKey) {
-      const existingResponse = this.storage.getIdempotentResponse(
+      const existingTx = await this.walletRepository.findTransactionByIdempotencyKey(
         transferDto.idempotencyKey,
       );
-      if (existingResponse) {
-        return existingResponse;
+      if (existingTx) {
+        const sourceWallet = await this.walletRepository.findById(
+          transferDto.sourceWalletId,
+        );
+        const destinationWallet = await this.walletRepository.findById(
+          transferDto.destinationWalletId,
+        );
+        return {
+          sourceWallet: sourceWallet!,
+          destinationWallet: destinationWallet!,
+          transactions: [existingTx],
+        };
       }
     }
 
-    // Acquire locks in consistent order to prevent deadlocks
-    const [firstWalletId, secondWalletId] = [
-      transferDto.sourceWalletId,
-      transferDto.destinationWalletId,
-    ].sort();
-
-    const releaseFirstLock =
-      await this.walletRepository.acquireLock(firstWalletId);
-    const releaseSecondLock =
-      await this.walletRepository.acquireLock(secondWalletId);
-
-    try {
+    return this.walletRepository.executeInTransaction(async () => {
       // Fetch wallets
       const sourceWallet = await this.walletRepository.findById(
         transferDto.sourceWalletId,
@@ -150,81 +120,68 @@ export class WalletService {
         );
       }
 
-      // Perform transfer
+      // Calculate new balances
       const sourceBalanceBefore = sourceWallet.balance;
       const destinationBalanceBefore = destinationWallet.balance;
 
-      sourceWallet.balance = this.roundToTwoDecimals(
+      const newSourceBalance = this.roundToTwoDecimals(
         sourceWallet.balance - transferDto.amount,
       );
-      destinationWallet.balance = this.roundToTwoDecimals(
+      const newDestinationBalance = this.roundToTwoDecimals(
         destinationWallet.balance + transferDto.amount,
       );
 
-      sourceWallet.updatedAt = new Date();
-      destinationWallet.updatedAt = new Date();
-
-      await this.walletRepository.save(sourceWallet);
-      await this.walletRepository.save(destinationWallet);
+      // Update balances
+      const updatedSourceWallet = await this.walletRepository.updateBalance(
+        sourceWallet.id,
+        newSourceBalance,
+      );
+      const updatedDestinationWallet = await this.walletRepository.updateBalance(
+        destinationWallet.id,
+        newDestinationBalance,
+      );
 
       // Create transactions
-      const transferOutTransaction = new Transaction({
-        id: uuidv4(),
+      const transferOutTransaction = await this.walletRepository.createTransaction({
         walletId: sourceWallet.id,
         sourceWalletId: sourceWallet.id,
         destinationWalletId: destinationWallet.id,
         type: TransactionType.TRANSFER_OUT,
         amount: transferDto.amount,
         balanceBefore: sourceBalanceBefore,
-        balanceAfter: sourceWallet.balance,
+        balanceAfter: newSourceBalance,
         status: TransactionStatus.SUCCESS,
         idempotencyKey: transferDto.idempotencyKey,
-        createdAt: new Date(),
       });
 
-      const transferInTransaction = new Transaction({
-        id: uuidv4(),
+      const transferInTransaction = await this.walletRepository.createTransaction({
         walletId: destinationWallet.id,
         sourceWalletId: sourceWallet.id,
         destinationWalletId: destinationWallet.id,
         type: TransactionType.TRANSFER_IN,
         amount: transferDto.amount,
         balanceBefore: destinationBalanceBefore,
-        balanceAfter: destinationWallet.balance,
+        balanceAfter: newDestinationBalance,
         status: TransactionStatus.SUCCESS,
-        idempotencyKey: transferDto.idempotencyKey,
-        createdAt: new Date(),
       });
 
-      await this.walletRepository.saveTransaction(transferOutTransaction);
-      await this.walletRepository.saveTransaction(transferInTransaction);
-
-      const response = {
-        sourceWallet,
-        destinationWallet,
+      return {
+        sourceWallet: updatedSourceWallet,
+        destinationWallet: updatedDestinationWallet,
         transactions: [transferOutTransaction, transferInTransaction],
       };
-
-      // Store idempotent response
-      if (transferDto.idempotencyKey) {
-        this.storage.setIdempotentResponse(transferDto.idempotencyKey, response);
-      }
-
-      return response;
-    } finally {
-      releaseSecondLock();
-      releaseFirstLock();
-    }
+    });
   }
 
-  async getWalletDetails(walletId: string): Promise {
+  async getWalletDetails(walletId: string): Promise<WalletResponseDto> {
     const wallet = await this.walletRepository.findById(walletId);
     if (!wallet) {
       throw new NotFoundException(`Wallet with ID ${walletId} not found`);
     }
 
-    const transactions =
-      await this.walletRepository.findTransactionsByWalletId(walletId);
+    const transactions = await this.walletRepository.findTransactionsByWalletId(
+      walletId,
+    );
 
     return new WalletResponseDto(wallet, transactions);
   }

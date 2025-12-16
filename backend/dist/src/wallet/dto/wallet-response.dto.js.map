@@ -1,0 +1,1 @@
+{"version":3,"file":"wallet-response.dto.js","sourceRoot":"","sources":["../../../../src/wallet/dto/wallet-response.dto.ts"],"names":[],"mappings":";;;AAGA,MAAa,iBAAiB;IAI5B,YAAY,MAAc,EAAE,YAA4B;QACtD,IAAI,CAAC,MAAM,GAAG,MAAM,CAAC;QACrB,IAAI,CAAC,YAAY,GAAG,YAAY,CAAC;IACnC,CAAC;CACF;AARD,8CAQC"}

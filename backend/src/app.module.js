@@ -43,7 +43,7 @@ var common_1 = require("@nestjs/common");
 var core_1 = require("@nestjs/core");
 var wallet_module_1 = require("./wallet/wallet.module");
 var http_exception_filter_1 = require("./common/filters/http-exception.filter");
-var logging_interceptor_1 = require("./common/interceptors/logging.interceptor");
+var logging_interceptor_1 = require("./common/interceptors/logging-interceptor");
 var AppModule = function () {
     var _classDecorators = [(0, common_1.Module)({
             imports: [wallet_module_1.WalletModule],

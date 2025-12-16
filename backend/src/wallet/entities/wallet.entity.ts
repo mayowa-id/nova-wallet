@@ -1,4 +1,3 @@
-
 export class Wallet {
   id: string;
   currency: string;
@@ -6,7 +5,7 @@ export class Wallet {
   createdAt: Date;
   updatedAt: Date;
 
-  constructor(partial: Partial) {
+  constructor(partial: Partial<Wallet>) { // Add <Wallet>
     Object.assign(this, partial);
   }
 }

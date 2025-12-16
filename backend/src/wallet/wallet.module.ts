@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { WalletController } from './wallet.controller';
 import { WalletService } from './wallet.service';
 import { WalletRepository } from './wallet.repository';
-import { InMemoryStorage } from '../storage/in-memory.storage';
+import { DatabaseService } from '../database/database.service';
 
 @Module({
   controllers: [WalletController],
-  providers: [WalletService, WalletRepository, InMemoryStorage],
+  providers: [WalletService, WalletRepository, DatabaseService],
 })
 export class WalletModule {}

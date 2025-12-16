@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  currency  String   @default("USD")
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+model Transaction {
+  id                   String   @id @default(uuid())
+  walletId             String
+  sourceWalletId       String?
+  destinationWalletId  String?
+  type                 String
+  amount               Float
+  balanceBefore        Float
+  balanceAfter         Float
+  status               String
+  idempotencyKey       String?  @unique
+  createdAt            DateTime @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@map("transactions")
+}
