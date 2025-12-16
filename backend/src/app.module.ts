@@ -13,7 +13,7 @@ import { LoggingInterceptor } from './common/interceptors/logging-interceptor'; 
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
-    },
+    }, 
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
