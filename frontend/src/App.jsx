@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Wallet, Send, Plus, Moon, Sun, DollarSign, ArrowUpRight, ArrowDownLeft, Clock, TrendingUp, Activity, Zap } from 'lucide-react';
 
-const API_URL = process.env.API_URL 
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function WalletDashboard() {
   const [darkMode, setDarkMode] = useState(true);
@@ -160,7 +160,7 @@ export default function WalletDashboard() {
               </div>
               <div>
                 <h1 className={`text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
-                  Wallet Pro
+                  nova 
                 </h1>
                 <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Digital wallet management platform
