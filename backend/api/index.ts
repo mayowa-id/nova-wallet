@@ -1,28 +1,36 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../src/app.module';
+import { ValidationPipe } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
-import serverless from 'serverless-http';
+import { AppModule } from '../src/app.module';
 
-let cachedHandler: any;
+const server = express();
+let app: any;
 
-async function bootstrap() {
-  const expressApp = express();
+async function createNestServer(expressInstance: express.Express) {
+  if (!app) {
+    app = await NestFactory.create(
+      AppModule,
+      new ExpressAdapter(expressInstance),
+      { logger: ['error', 'warn', 'log'] } // Add logging
+    );
 
-  const app = await NestFactory.create(
-    AppModule,
-    new ExpressAdapter(expressApp),
-  );
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
 
-  app.enableCors();
-  await app.init();
-
-  return serverless(expressApp);
-}
-
-export default async function handler(req: any, res: any) {
-  if (!cachedHandler) {
-    cachedHandler = await bootstrap();
+    app.enableCors();
+    await app.init();
+    console.log(' Nest Ready');
   }
-  return cachedHandler(req, res);
+  return app;
 }
+
+// Initialize on cold start
+createNestServer(server).catch((err) => console.error(' Nest broken', err));
+
+export default server;
