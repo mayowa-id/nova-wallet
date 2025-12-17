@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, Send, Plus, Moon, Sun, DollarSign, ArrowUpRight, ArrowDownLeft, Clock, TrendingUp, Activity, Zap } from 'lucide-react';
+import { Wallet, Send, Plus, Moon, Sun, DollarSign, ArrowUpRight, ArrowDownLeft, Clock, TrendingUp, Activity, Zap, Copy, Check } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = 'https://nova-wallet-six.vercel.app';
 
 export default function WalletDashboard() {
   const [darkMode, setDarkMode] = useState(true);
@@ -10,6 +10,7 @@ export default function WalletDashboard() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [copiedId, setCopiedId] = useState(null);
   
   // Form states
   const [fundAmount, setFundAmount] = useState('');
@@ -28,6 +29,17 @@ export default function WalletDashboard() {
   const showMessage = (type, text) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+  };
+
+  const copyToClipboard = async (text, id) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      showMessage('success', '✓ Wallet address copied!');
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      showMessage('error', '✗ Failed to copy address');
+    }
   };
 
   const createWallet = async () => {
@@ -160,10 +172,10 @@ export default function WalletDashboard() {
               </div>
               <div>
                 <h1 className={`text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
-                  nova 
+                 nova pro
                 </h1>
                 <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Digital wallet management platform
+                  Digital wallet platform
                 </p>
               </div>
             </div>
@@ -359,9 +371,24 @@ export default function WalletDashboard() {
                       <p className={`text-3xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                         ${wallet.balance.toFixed(2)}
                       </p>
-                      <p className={`text-xs font-mono ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                        {wallet.id.slice(0, 8)}...{wallet.id.slice(-6)}
-                      </p>
+                      <div 
+                        className="group flex items-center space-x-2 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyToClipboard(wallet.id, wallet.id);
+                        }}
+                      >
+                        <p className={`text-xs font-mono ${darkMode ? 'text-gray-500' : 'text-gray-400'} group-hover:text-blue-500 transition-colors`}>
+                          {wallet.id.slice(0, 8)}...{wallet.id.slice(-6)}
+                        </p>
+                        {copiedId === wallet.id ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <Copy className={`w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity ${
+                            darkMode ? 'text-gray-500' : 'text-gray-400'
+                          }`} />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
