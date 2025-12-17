@@ -6,9 +6,6 @@
 .env
 .env.example
 
-/backend/env
-/frontend/env
-
 # Logs
 logs
 *.log
