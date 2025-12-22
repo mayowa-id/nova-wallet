@@ -2,11 +2,7 @@
 
 > A production-grade full-stack application demonstrating enterprise-level financial transaction handling with modern web technologies.
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://your-frontend.vercel.app)
-[![API Docs](https://img.shields.io/badge/API-documented-blue)](https://your-backend.vercel.app)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
----
+Live at https://nova-wallet-pro.vercel.app/
 
 ##  Project Narrative
 
@@ -384,54 +380,6 @@ Automated deployment pipeline:
 
 ---
 
-## 🎓 What I Learned
-
-### Technical Insights
-1. **Database transactions are non-negotiable for financial systems**—in-memory solutions don't scale
-2. **Idempotency isn't optional**—it's the foundation of reliable distributed systems
-3. **Type safety catches bugs before production**—TypeScript + Prisma prevented numerous runtime errors
-4. **Observability must be built in, not bolted on**—logging and monitoring from day one
-
-### Product Insights
-1. **Empty states matter**—users need guidance when starting fresh
-2. **Progressive disclosure reduces overwhelm**—show complexity gradually
-3. **Feedback loops are critical**—every action needs confirmation (toasts, animations)
-4. **Dark mode isn't just aesthetic**—it's an accessibility and usability feature
-
-### Process Insights
-1. **Start with the data model**—get entities and relationships right first
-2. **Write tests for edge cases immediately**—don't defer to "later"
-3. **Deploy early and often**—Vercel preview deployments caught issues before production
-4. **Document decisions as you go**—future you will thank present you
-
----
-
-## 🚧 Future Enhancements
-
-If I had more time, I would add:
-
-### Short-Term (1-2 weeks)
-- [ ] Multi-currency support with real-time exchange rates (Fixer.io API)
-- [ ] Transaction search and filtering (date range, type, amount)
-- [ ] Export transaction history (CSV, PDF)
-- [ ] Wallet nicknames and custom icons
-- [ ] Email notifications for transfers
-
-### Medium-Term (1-2 months)
-- [ ] Recurring transfers (scheduled payments)
-- [ ] Transaction categories and budgets
-- [ ] Multi-user wallet sharing (joint accounts)
-- [ ] API rate limiting and usage analytics
-- [ ] Admin dashboard for support team
-
-### Long-Term (3-6 months)
-- [ ] Mobile app (React Native)
-- [ ] Biometric authentication
-- [ ] Integration with external payment providers (Stripe, PayPal)
-- [ ] Fraud detection with ML models
-- [ ] Compliance reporting (AML, KYC)
-
----
 
 ##  Tech Stack Summary
 
